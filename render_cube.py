@@ -1,7 +1,8 @@
 import sys
 import os
 from vulkan_node import *
-from vulkan_node import Styles
+from vulkan_node import EdgeStyles
+from vulkan_node import NodeStyles
 
 output_name = "render_cube.png"
 edge_list = []
@@ -52,8 +53,8 @@ edge_list.extend([
     (cube_sample_bit, cube_color_attachment_desc),
     (cube_color_format, cube_color_attachment_desc),
     # implicit dependency between attachment reference and attachment desciption
-    (cube_color_attachment_ref, cube_color_attachment_desc, Styles.implicit_match),
-    (cube_depth_attachment_ref, cube_depth_attachment_desc, Styles.implicit_match),
+    (cube_color_attachment_ref, cube_color_attachment_desc, EdgeStyles.implicit_match),
+    (cube_depth_attachment_ref, cube_depth_attachment_desc, EdgeStyles.implicit_match),
     # Renderpass create info
     (cube_depth_attachment_desc, cube_render_pass_create_info),
     (cube_color_attachment_desc, cube_render_pass_create_info),
@@ -64,8 +65,8 @@ edge_list.extend([
 # Create framebuffer for cube rendering
 cube_depth_image_create_info = VkImageCreateInfo("Cube Depth Image")
 cube_color_image_create_info = VkImageCreateInfo("Cube Color Image")
-cube_depth_image = VkImage("Cube Depth Image")
-cube_color_image = VkImage("Cube Color Image")
+cube_depth_image = VkImage("Cube Depth Image", NodeStyles.render_output)
+cube_color_image = VkImage("Cube Color Image", NodeStyles.render_output)
 cube_depth_view_create_info = VkImageViewCreateInfo("Cube Depth view")
 cube_color_view_create_info = VkImageViewCreateInfo("Cube Color view")
 cube_depth_view = VkImageView("Cube Depth view")
@@ -93,8 +94,8 @@ edge_list.extend([
     (cube_framebuffer_create_info, cube_framebuffer),
 
     # implicit matches
-    (cube_depth_image, cube_depth_attachment_desc, Styles.implicit_match),
-    (cube_color_image, cube_color_attachment_desc, Styles.implicit_match),
+    (cube_depth_image, cube_depth_attachment_desc, EdgeStyles.implicit_match),
+    (cube_color_image, cube_color_attachment_desc, EdgeStyles.implicit_match),
 ])
 
 
@@ -145,8 +146,8 @@ edge_list.extend([
     (cube_write_descriptor, cube_update_descriptor),
 
     # implicit matches
-    (camera_descriptor_buffer_info, camera_binding, Styles.implicit_match),
-    (transform_descriptor_buffer_info, transform_binding, Styles.implicit_match),
+    (camera_binding, camera_descriptor_buffer_info, EdgeStyles.implicit_match),
+    (transform_binding, transform_descriptor_buffer_info, EdgeStyles.implicit_match),
 ])
 
 # bind resources and draw cube

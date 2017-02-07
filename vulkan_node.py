@@ -1,10 +1,22 @@
 import pygraphviz as pgv
 
 
+class EdgeStyles:
+    implicit_dep = {"style": "dashed"}
+    implicit_match = {"style": "dashed", "arrowhead": "none"}
+
+
+class NodeStyles:
+    render_input = {"style": "filled", "fillcolor": "lightsalmon"}
+    render_output = {"style": "filled", "fillcolor": "lightblue"}
+    render_inout = {"style": "filled", "fillcolor": "plum1"}
+
+
 class Node(object):
-    def __init__(self, name, desc):
+    def __init__(self, name, desc, style):
         self.name = name
         self.desc = desc
+        self.style = style
 
     def __repr__(self):
         return str(self.__class__) + self.name
@@ -20,9 +32,6 @@ class Node(object):
 
 
 class HandleNode(Node):
-    def __init__(self, name, desc):
-        super(HandleNode, self).__init__(name, desc)
-
     def color(self):
         return "crimson"
 
@@ -31,9 +40,6 @@ class HandleNode(Node):
 
 
 class StructNode(Node):
-    def __init__(self, name, desc):
-        super(StructNode, self).__init__(name, desc)
-
     def color(self):
         return "forestgreen"
 
@@ -42,9 +48,6 @@ class StructNode(Node):
 
 
 class ElementNode(Node):
-    def __init__(self, name, desc):
-        super(ElementNode, self).__init__(name, desc)
-
     def color(self):
         return "navy"
 
@@ -53,9 +56,6 @@ class ElementNode(Node):
 
 
 class CommandNode(Node):
-    def __init__(self, name, desc):
-        super(CommandNode, self).__init__(name, desc)
-
     def color(self):
         return "black"
 
@@ -66,8 +66,8 @@ class CommandNode(Node):
 def NodeFactory(name, BaseClass):
     assert isinstance(name, str)
 
-    def __init__(self, desc):
-        super(self.__class__, self).__init__(name, desc)
+    def __init__(self, desc, style={}):
+        super(self.__class__, self).__init__(name, desc, style)
 
     return type(name, (BaseClass,), {"__init__": __init__})
 
@@ -142,7 +142,7 @@ def build_graph(edge_list):
     for e in edge_list:
         for item in e:
             if isinstance(item, Node):
-                G.add_node(item, color=item.color(), shape=item.shape())
+                G.add_node(item, color=item.color(), shape=item.shape(), **item.style)
         if len(e) == 3:
             G.add_edge(e[0], e[1], **e[2])
         else:
@@ -155,8 +155,3 @@ def write_graph(graph, output):
     assert isinstance(output, str)
     graph.layout('dot')
     graph.draw(output)
-
-
-class Styles:
-    implicit_dep = {"style": "dashed"}
-    implicit_match = {"style": "dashed", "arrowhead": "none"}
