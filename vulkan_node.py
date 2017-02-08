@@ -10,6 +10,7 @@ class NodeStyles:
     render_input = {"style": "filled", "fillcolor": "lightsalmon"}
     render_output = {"style": "filled", "fillcolor": "lightblue"}
     render_inout = {"style": "filled", "fillcolor": "plum1"}
+    shader_data = {"style": "filled", "fillcolor": "lightgoldenrod1"}
 
 
 class Node(object):
@@ -29,6 +30,14 @@ class Node(object):
 
     def shape(self):
         raise NotImplementedError
+
+
+class DataNode(Node):
+    def color(self):
+        return "grey"
+
+    def shape(self):
+        return "note"
 
 
 class HandleNode(Node):
@@ -70,6 +79,10 @@ def NodeFactory(name, BaseClass):
         super(self.__class__, self).__init__(name, desc, style)
 
     return type(name, (BaseClass,), {"__init__": __init__})
+
+_data_nodes = [
+    "Vertex",
+]
 
 _struct_nodes = [
     "VkImageCreateInfo",
@@ -114,6 +127,8 @@ _element_nodes = [
     "VkShaderStageFlags",
     "VkSampleCountFlagBits",
     "VkFormat",
+    "VkBufferUsageFlags",
+    "VkImageUsageFlags",
 ]
 
 
@@ -122,10 +137,14 @@ _command_nodes = [
     "vkCmdEndRenderPass",
     "vkCmdBindDescriptorSet",
     "vkCmdBindPipeline",
+    "vkCmdBindVertexBuffers",
     "vkCmdDrawIndexed",
     "vkUpdateDescriptor",
 ]
 
+
+for n in _data_nodes:
+    globals()[n] = NodeFactory(n, DataNode)
 for n in _struct_nodes:
     globals()[n] = NodeFactory(n, StructNode)
 for n in _handle_nodes:

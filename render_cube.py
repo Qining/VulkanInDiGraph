@@ -7,6 +7,25 @@ from vulkan_node import NodeStyles
 output_name = "render_cube.png"
 edge_list = []
 
+# cube model data
+vertex_buffer_usage = VkBufferUsageFlags("Vertex Buffer")
+transfer_buffer_usage = VkBufferUsageFlags("Transfer Dst")
+cube_vertex_buffer_create_info = VkBufferCreateInfo("Cube vertex buffer")
+cube_vertex_data = Vertex("Cube vertex data", NodeStyles.render_input)
+cube_vertex_buffer = VkBuffer(
+    "Cube vertex buffer: require data copied from elsewhere",
+    NodeStyles.render_input)
+
+edge_list.extend([
+    (vertex_buffer_usage, cube_vertex_buffer_create_info),
+    (transfer_buffer_usage, cube_vertex_buffer_create_info),
+    (cube_vertex_buffer_create_info, cube_vertex_buffer),
+    (cube_vertex_data, cube_vertex_buffer),
+
+    # implicit matches
+    (cube_vertex_data, vertex_buffer_usage),
+])
+
 # cube rendering descriptor set layouts and pipeline layout
 uniform_buffer_descriptor_type = VkDescriptorType("Uniform Buffer")
 vertex_shader_stage_flag = VkShaderStageFlags("Vertex")
@@ -53,8 +72,10 @@ edge_list.extend([
     (cube_sample_bit, cube_color_attachment_desc),
     (cube_color_format, cube_color_attachment_desc),
     # implicit dependency between attachment reference and attachment desciption
-    (cube_color_attachment_ref, cube_color_attachment_desc, EdgeStyles.implicit_match),
-    (cube_depth_attachment_ref, cube_depth_attachment_desc, EdgeStyles.implicit_match),
+    (cube_color_attachment_ref, cube_color_attachment_desc,
+     EdgeStyles.implicit_match),
+    (cube_depth_attachment_ref, cube_depth_attachment_desc,
+     EdgeStyles.implicit_match),
     # Renderpass create info
     (cube_depth_attachment_desc, cube_render_pass_create_info),
     (cube_color_attachment_desc, cube_render_pass_create_info),
@@ -98,7 +119,6 @@ edge_list.extend([
     (cube_color_image, cube_color_attachment_desc, EdgeStyles.implicit_match),
 ])
 
-
 # build pipeline for cube rendering
 cube_vertex_binding_desc = VkVertexBindingDescription(
     "cube model vertex buffers")
@@ -115,6 +135,10 @@ edge_list.extend([
     (cube_pipeline_vertex_input_state_create_info, cube_pipeline_create_info),
     (cube_pipeline_layout, cube_pipeline_create_info),
     (cube_pipeline_create_info, cube_pipeline),
+
+    # implicit matches
+    (cube_vertex_data, cube_vertex_binding_desc, EdgeStyles.implicit_match),
+    (cube_vertex_data, cube_vertex_attribute_desc, EdgeStyles.implicit_match),
 ])
 
 # Allocate cube rendering descriptor sets and update the descriptor sets
@@ -147,13 +171,15 @@ edge_list.extend([
 
     # implicit matches
     (camera_binding, camera_descriptor_buffer_info, EdgeStyles.implicit_match),
-    (transform_binding, transform_descriptor_buffer_info, EdgeStyles.implicit_match),
+    (transform_binding, transform_descriptor_buffer_info,
+     EdgeStyles.implicit_match),
 ])
 
 # bind resources and draw cube
 cube_render_pass_begin_info = VkRenderPassBeginInfo("Cube Rendering")
 begin_cube_render_pass = vkCmdBeginRenderPass("Cube Rendering")
 end_cube_render_pass = vkCmdEndRenderPass("Cube Rendering")
+bind_cube_vertex_buffer = vkCmdBindVertexBuffers("Cube vertex buffer")
 bind_cube_descriptor_set = vkCmdBindDescriptorSet("Cube Rendering")
 bind_cube_pipeline = vkCmdBindPipeline("Cube Pipeline")
 draw_cube = vkCmdDrawIndexed("Draw Cube")
@@ -167,7 +193,12 @@ edge_list.extend([
     (bind_cube_descriptor_set, draw_cube),
     (cube_pipeline, bind_cube_pipeline),
     (bind_cube_pipeline, draw_cube),
+    (cube_vertex_buffer, bind_cube_vertex_buffer),
+    (bind_cube_vertex_buffer, draw_cube),
     (draw_cube, end_cube_render_pass),
+
+    # implicit matches
+    (cube_vertex_data, bind_cube_vertex_buffer, EdgeStyles.implicit_match),
 ])
 
 if __name__ == "__main__":
