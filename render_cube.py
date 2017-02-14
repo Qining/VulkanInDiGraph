@@ -172,6 +172,7 @@ edge_list.extend([
     (cube_vert_shader_code, transform_binding, EdgeStyles.implicit_match),
     (cube_vert_shader_code, cube_descriptor_set_layout_create_info,
      EdgeStyles.implicit_match),
+    (cube_vert_shader_code, cube_frag_shader_code, EdgeStyles.implicit_match),
 ])
 
 # Camera and Transform Data
