@@ -82,6 +82,10 @@ def NodeFactory(name, BaseClass):
 
 _data_nodes = [
     "Vertex",
+    "VertShader",
+    "FragShader",
+    "Matrix",
+    "Texture",
 ]
 
 _struct_nodes = [
@@ -106,6 +110,8 @@ _struct_nodes = [
     "VkWriteDescriptorSet",
     "VkRenderPassBeginInfo",
     "VkGraphicsPipelineCreateInfo",
+    "VkShaderModuleCreateInfo",
+    "VkPipelineShaderStageCreateInfo",
 ]
 
 _handle_nodes = [
@@ -120,6 +126,7 @@ _handle_nodes = [
     "VkGraphicsPipeline",
     "VkDescriptorPool",
     "VkDescriptorSet",
+    "VkShaderModule",
 ]
 
 _element_nodes = [
@@ -140,6 +147,7 @@ _command_nodes = [
     "vkCmdBindVertexBuffers",
     "vkCmdDrawIndexed",
     "vkCmdUpdateBuffer",
+    "vkCmdCopyBuffer",
 
     "vkUpdateDescriptor",
 ]

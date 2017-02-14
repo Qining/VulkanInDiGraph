@@ -1,23 +1,40 @@
-import pygraphviz as pgv
 import sys
-from vulkan_node import Node, StructNode, HandleNode, ElementNode, CommandNode
+import os
+from vulkan_node import *
+from vulkan_node import EdgeStyles
+from vulkan_node import NodeStyles
 
-output_name = "read_multisampled_depth.png"
 edge_list = []
 
+# cube model data
+vertex_buffer_usage = VkBufferUsageFlags("Vertex Buffer")
+transfer_buffer_usage = VkBufferUsageFlags("Transfer Dst")
+cube_vertex_buffer_create_info = VkBufferCreateInfo("Cube vertex buffer")
+cube_vertex_data = Vertex("Cube vertex data", NodeStyles.render_input)
+cube_vertex_update_buffer = vkCmdUpdateBuffer("Transfer vertex data to buffer")
+cube_vertex_buffer = VkBuffer("Cube vertex buffer", NodeStyles.render_input)
+
+edge_list.extend([
+    (vertex_buffer_usage, cube_vertex_buffer_create_info),
+    (transfer_buffer_usage, cube_vertex_buffer_create_info),
+    (cube_vertex_buffer_create_info, cube_vertex_buffer),
+    (cube_vertex_data, cube_vertex_update_buffer),
+    (cube_vertex_update_buffer, cube_vertex_buffer),
+
+    # implicit matches
+    (cube_vertex_data, vertex_buffer_usage, EdgeStyles.implicit_dep),
+])
+
 # cube rendering descriptor set layouts and pipeline layout
-uniform_buffer_descriptor_type = ElementNode("VkDescriptorType",
-                                             "Uniform Buffer")
-vertex_shader_stage_flag = ElementNode("VkShaderStageFlags", "Vertex")
-camera_binding = StructNode("VkDescriptorSetLayoutBinding", "Camera")
-transform_binding = StructNode("VkDescriptorSetLayoutBinding", "Transform")
-cube_descriptor_set_layout_create_info = StructNode(
-    "VkDescriptorSetLayoutCreateInfo", "Cube Rendering")
-cube_descriptor_set_layout = HandleNode("VkDescriptorSetLayout",
-                                        "Cube Rendering")
-cube_pipeline_layout_create_info = StructNode("VkPipelineLayoutCreateInfo",
-                                              "Cube Rendering")
-cube_pipeline_layout = HandleNode("VkPipelineLayout", "Cube Rendering")
+uniform_buffer_descriptor_type = VkDescriptorType("Uniform Buffer")
+vertex_shader_stage_flag = VkShaderStageFlags("Vertex")
+camera_binding = VkDescriptorSetLayoutBinding("Camera")
+transform_binding = VkDescriptorSetLayoutBinding("Transform")
+cube_descriptor_set_layout_create_info = VkDescriptorSetLayoutCreateInfo(
+    "Cube Rendering")
+cube_descriptor_set_layout = VkDescriptorSetLayout("Cube Rendering")
+cube_pipeline_layout_create_info = VkPipelineLayoutCreateInfo("Cube Rendering")
+cube_pipeline_layout = VkPipelineLayout("Cube Rendering")
 
 edge_list.extend([
     (uniform_buffer_descriptor_type, camera_binding),
@@ -32,17 +49,16 @@ edge_list.extend([
 ])
 
 # Create render pass for cube rendering
-cube_depth_attachment_ref = StructNode("VkAttachmentReference", "Depth at 0")
-cube_color_attachment_ref = StructNode("VkAttachmentReference", "Color at 1")
-cube_subpass_desc = StructNode("VkSubpassDescription", "Cube Rendering")
-cube_sample_bit = StructNode("VkSampleCountFlagBits", "4 bits")
-cube_depth_format = ElementNode("VkFormat", "Depth format")
-cube_depth_attachment_desc = StructNode("VkAttachmentDescription", "For Depth")
-cube_color_attachment_desc = StructNode("VkAttachmentDescription", "For Color")
-cube_color_format = ElementNode("VkFormat", "Color format")
-cube_render_pass_create_info = StructNode("VkRenderPassCreateInfo",
-                                          "Cube Rendering")
-cube_render_pass = HandleNode("VkRenderPass", "Cube render pass")
+cube_depth_attachment_ref = VkAttachmentReference("Depth at 0")
+cube_color_attachment_ref = VkAttachmentReference("Color at 1")
+cube_subpass_desc = VkSubpassDescription("Cube Rendering")
+cube_sample_bit = VkSampleCountFlagBits("4 bits")
+cube_depth_format = VkFormat("Depth format")
+cube_depth_attachment_desc = VkAttachmentDescription("For Depth")
+cube_color_attachment_desc = VkAttachmentDescription("For Color")
+cube_color_format = VkFormat("Color format")
+cube_render_pass_create_info = VkRenderPassCreateInfo("Cube Rendering")
+cube_render_pass = VkRenderPass("Cube render pass")
 
 edge_list.extend([
     # subpass description
@@ -54,6 +70,11 @@ edge_list.extend([
     # color attachment description
     (cube_sample_bit, cube_color_attachment_desc),
     (cube_color_format, cube_color_attachment_desc),
+    # implicit dependency between attachment reference and attachment desciption
+    (cube_color_attachment_ref, cube_color_attachment_desc,
+     EdgeStyles.implicit_match),
+    (cube_depth_attachment_ref, cube_depth_attachment_desc,
+     EdgeStyles.implicit_match),
     # Renderpass create info
     (cube_depth_attachment_desc, cube_render_pass_create_info),
     (cube_color_attachment_desc, cube_render_pass_create_info),
@@ -62,21 +83,17 @@ edge_list.extend([
 ])
 
 # Create framebuffer for cube rendering
-cube_depth_image_create_info = StructNode("VkImageCreateInfo",
-                                          "Cube Depth Image")
-cube_color_image_create_info = StructNode("VkImageCreateInfo",
-                                          "Cube Color Image")
-cube_depth_image = HandleNode("VkImage", "Cube Depth Image")
-cube_color_image = HandleNode("VkImage", "Cube Color Image")
-cube_depth_view_create_info = StructNode("VkImageViewCreateInfo",
-                                         "Cube Depth view")
-cube_color_view_create_info = StructNode("VkImageViewCreateInfo",
-                                         "Cube Color view")
-cube_depth_view = HandleNode("VkImageView", "Cube Depth view")
-cube_color_view = HandleNode("VkImageView", "Cube Color view")
-cube_framebuffer_create_info = StructNode("VkFramebufferCreateInfo",
-                                          "Cube rendering framebuffer")
-cube_framebuffer = HandleNode("VkFramebuffer", "Cube rendering framebuffer")
+cube_depth_image_create_info = VkImageCreateInfo("Cube Depth Image")
+cube_color_image_create_info = VkImageCreateInfo("Cube Color Image")
+cube_depth_image = VkImage("Cube Depth Image", NodeStyles.render_output)
+cube_color_image = VkImage("Cube Color Image", NodeStyles.render_output)
+cube_depth_view_create_info = VkImageViewCreateInfo("Cube Depth view")
+cube_color_view_create_info = VkImageViewCreateInfo("Cube Color view")
+cube_depth_view = VkImageView("Cube Depth view")
+cube_color_view = VkImageView("Cube Color view")
+cube_framebuffer_create_info = VkFramebufferCreateInfo(
+    "Cube rendering framebuffer")
+cube_framebuffer = VkFramebuffer("Cube rendering framebuffer")
 
 edge_list.extend([
     (cube_depth_format, cube_depth_image_create_info),
@@ -95,44 +112,49 @@ edge_list.extend([
     (cube_depth_view, cube_framebuffer_create_info),
     (cube_color_view, cube_framebuffer_create_info),
     (cube_framebuffer_create_info, cube_framebuffer),
+
+    # implicit matches
+    (cube_depth_image, cube_depth_attachment_desc, EdgeStyles.implicit_match),
+    (cube_color_image, cube_color_attachment_desc, EdgeStyles.implicit_match),
 ])
 
 # build pipeline for cube rendering
-cube_vertex_binding_desc = StructNode("VkVertexBindingDescription",
-                                      "cube model vertex buffers")
-cube_vertex_attribute_desc = StructNode(
-    "VkVertexAttributeDescription",
+cube_vertex_binding_desc = VkVertexBindingDescription(
+    "cube model vertex buffers")
+cube_vertex_attribute_desc = VkVertexAttributeDescription(
     "cube model vertex info for each \'location\'")
-cube_pipeline_vertex_input_state_create_info = StructNode(
-    "VkPipelineVertexInputStateCreateInfo", "cube model vertex info")
-cube_pipeline_create_info = StructNode("VkGraphicsPipelineCreateInfo",
-                                       "cube pipeline create info")
-cube_pipeline = HandleNode("VkGraphicsPipeline", "cube pipeline")
+cube_pipeline_vertex_input_state_create_info = VkPipelineVertexInputStateCreateInfo(
+    "cube model vertex info")
+cube_pipeline_create_info = VkGraphicsPipelineCreateInfo(
+    "cube pipeline create info")
+cube_pipeline = VkGraphicsPipeline("cube pipeline")
 edge_list.extend([
     (cube_vertex_binding_desc, cube_pipeline_vertex_input_state_create_info),
     (cube_vertex_attribute_desc, cube_pipeline_layout_create_info),
     (cube_pipeline_vertex_input_state_create_info, cube_pipeline_create_info),
     (cube_pipeline_layout, cube_pipeline_create_info),
     (cube_pipeline_create_info, cube_pipeline),
+
+    # implicit matches
+    (cube_vertex_data, cube_vertex_binding_desc, EdgeStyles.implicit_match),
+    (cube_vertex_data, cube_vertex_attribute_desc, EdgeStyles.implicit_match),
 ])
 
 # Allocate cube rendering descriptor sets and update the descriptor sets
-cube_descriptor_pool_create_info = StructNode("VkDescriptorPoolCreateInfo",
-                                              "Cube descriptor pool")
-cube_descriptor_pool = HandleNode("VkDescriptorPool", "Cube descriptor pool")
-cube_descriptor_set_allocate_info = StructNode("VkDescriptorSetAllocateInfo",
-                                               "Cube descriptor set")
-cube_descriptor_set = HandleNode("VkDescriptorSet", "Cube descriptor set")
-camera_uniform_buffer = HandleNode("VkBuffer", "Cube Rendering Camera data")
-transform_uniform_buffer = HandleNode("VkBuffer",
-                                      "Cube Rendering Transform data")
-camera_descriptor_buffer_info = StructNode(
-    "VkDescriptorBufferInfo", "Cube descriptor buffer info: camera")
-transform_descriptor_buffer_info = StructNode(
-    "VkDescriptorBufferInfo", "Cube descriptor buffer info: transform")
-cube_write_descriptor = StructNode("VkWriteDescriptorSet",
-                                   "Cube descriptor set")
-cube_update_descriptor = CommandNode("vkUpdateDescriptor", "Cube descriptor")
+cube_descriptor_pool_create_info = VkDescriptorPoolCreateInfo(
+    "Cube descriptor pool")
+cube_descriptor_pool = VkDescriptorPool("Cube descriptor pool")
+cube_descriptor_set_allocate_info = VkDescriptorSetAllocateInfo(
+    "Cube descriptor set")
+cube_descriptor_set = VkDescriptorSet("Cube descriptor set")
+camera_uniform_buffer = VkBuffer("Cube Rendering Camera data")
+transform_uniform_buffer = VkBuffer("Cube Rendering Transform data")
+camera_descriptor_buffer_info = VkDescriptorBufferInfo(
+    "Cube descriptor buffer info: camera")
+transform_descriptor_buffer_info = VkDescriptorBufferInfo(
+    "Cube descriptor buffer info: transform")
+cube_write_descriptor = VkWriteDescriptorSet("Cube descriptor set")
+cube_update_descriptor = vkUpdateDescriptor("Cube descriptor")
 
 edge_list.extend([
     (cube_descriptor_pool_create_info, cube_descriptor_pool),
@@ -145,17 +167,21 @@ edge_list.extend([
     (camera_descriptor_buffer_info, cube_write_descriptor),
     (transform_descriptor_buffer_info, cube_write_descriptor),
     (cube_write_descriptor, cube_update_descriptor),
+
+    # implicit matches
+    (camera_binding, camera_descriptor_buffer_info, EdgeStyles.implicit_match),
+    (transform_binding, transform_descriptor_buffer_info,
+     EdgeStyles.implicit_match),
 ])
 
 # bind resources and draw cube
-cube_render_pass_begin_info = StructNode("VkRenderPassBeginInfo",
-                                         "Cube Rendering")
-begin_cube_render_pass = CommandNode("vkCmdBeginRenderPass", "Cube Rendering")
-end_cube_render_pass = CommandNode("vkCmdEndRenderPass", "Cube Rendering")
-bind_cube_descriptor_set = CommandNode("vkCmdBindDescriptorSet",
-                                       "Cube Rendering")
-bind_cube_pipeline = CommandNode("vkCmdBindPipeline", "Cube Pipeline")
-draw_cube = CommandNode("vkCmdDrawIndexed", "Draw Cube")
+cube_render_pass_begin_info = VkRenderPassBeginInfo("Cube Rendering")
+begin_cube_render_pass = vkCmdBeginRenderPass("Cube Rendering")
+end_cube_render_pass = vkCmdEndRenderPass("Cube Rendering")
+bind_cube_vertex_buffer = vkCmdBindVertexBuffers("Cube vertex buffer")
+bind_cube_descriptor_set = vkCmdBindDescriptorSet("Cube Rendering")
+bind_cube_pipeline = vkCmdBindPipeline("Cube Pipeline")
+draw_cube = vkCmdDrawIndexed("Draw Cube")
 
 edge_list.extend([
     (cube_framebuffer, cube_render_pass_begin_info),
@@ -166,29 +192,17 @@ edge_list.extend([
     (bind_cube_descriptor_set, draw_cube),
     (cube_pipeline, bind_cube_pipeline),
     (bind_cube_pipeline, draw_cube),
+    (cube_vertex_buffer, bind_cube_vertex_buffer),
+    (bind_cube_vertex_buffer, draw_cube),
     (draw_cube, end_cube_render_pass),
+
+    # implicit matches
+    (cube_vertex_data, bind_cube_vertex_buffer, EdgeStyles.implicit_match),
 ])
 
-
-def build_graph(edge_list):
-    assert isinstance(edge_list, list)
-    G = pgv.AGraph(directed=True, strict=True)
-    for e in edge_list:
-        for item in e:
-            if isinstance(item, Node):
-                G.add_node(item, color=item.color())
-        G.add_edge(e[0], e[1])
-    return G
-
-
-def write_graph(graph, output):
-    assert isinstance(graph, pgv.AGraph)
-    assert isinstance(output, str)
-    graph.layout('dot')
-    graph.draw(output)
-
-
-if len(sys.argv) > 1:
-    output_name = sys.argv[1]
-g = build_graph(edge_list)
-write_graph(g, output_name)
+if __name__ == "__main__":
+    output_name = os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.png'
+    if len(sys.argv) > 1:
+        output_name = sys.argv[1]
+    g = build_graph(edge_list)
+    write_graph(g, output_name)

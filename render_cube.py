@@ -4,12 +4,11 @@ from vulkan_node import *
 from vulkan_node import EdgeStyles
 from vulkan_node import NodeStyles
 
-output_name = "render_cube.png"
 edge_list = []
 
 # cube model data
 vertex_buffer_usage = VkBufferUsageFlags("Vertex Buffer")
-transfer_buffer_usage = VkBufferUsageFlags("Transfer Dst")
+transfer_dst_buffer_usage = VkBufferUsageFlags("Transfer Dst")
 cube_vertex_buffer_create_info = VkBufferCreateInfo("Cube vertex buffer")
 cube_vertex_data = Vertex("Cube vertex data", NodeStyles.render_input)
 cube_vertex_update_buffer = vkCmdUpdateBuffer("Transfer vertex data to buffer")
@@ -17,7 +16,7 @@ cube_vertex_buffer = VkBuffer("Cube vertex buffer", NodeStyles.render_input)
 
 edge_list.extend([
     (vertex_buffer_usage, cube_vertex_buffer_create_info),
-    (transfer_buffer_usage, cube_vertex_buffer_create_info),
+    (transfer_dst_buffer_usage, cube_vertex_buffer_create_info),
     (cube_vertex_buffer_create_info, cube_vertex_buffer),
     (cube_vertex_data, cube_vertex_update_buffer),
     (cube_vertex_update_buffer, cube_vertex_buffer),
@@ -141,6 +140,65 @@ edge_list.extend([
     (cube_vertex_data, cube_vertex_attribute_desc, EdgeStyles.implicit_match),
 ])
 
+# Shader module
+cube_vert_shader_code = VertShader("Cube vertex shader")
+cube_frag_shader_code = FragShader("Cube fragement shader")
+cube_vert_shader_create_info = VkShaderModuleCreateInfo("Cube vertex shader")
+cube_frag_shader_create_info = VkShaderModuleCreateInfo("Cube fragment shader")
+cube_vert_shader_module = VkShaderModule("Cube vertex shader")
+cube_frag_shader_module = VkShaderModule("Cube fragment shader")
+cube_vert_pipeline_shader_stage_create_info = VkPipelineShaderStageCreateInfo(
+    "Cube vertex shader")
+cube_frag_pipeline_shader_stage_create_info = VkPipelineShaderStageCreateInfo(
+    "Cube fragment shader (no descriptor set)")
+
+edge_list.extend([
+    (cube_vert_shader_code, cube_vert_shader_create_info),
+    (cube_frag_shader_code, cube_frag_shader_create_info),
+    (cube_vert_shader_create_info, cube_vert_shader_module),
+    (cube_frag_shader_create_info, cube_frag_shader_module),
+    (cube_vert_shader_module, cube_vert_pipeline_shader_stage_create_info),
+    (cube_frag_shader_module, cube_frag_pipeline_shader_stage_create_info),
+    (vertex_shader_stage_flag, cube_vert_pipeline_shader_stage_create_info),
+    (VkShaderStageFlags("Fragment (no descriptor set)"),
+     cube_frag_pipeline_shader_stage_create_info),
+    (cube_vert_pipeline_shader_stage_create_info, cube_pipeline_create_info),
+    (cube_frag_pipeline_shader_stage_create_info, cube_pipeline_create_info),
+
+    # implicit matches
+    (cube_vert_shader_code, camera_binding, EdgeStyles.implicit_match),
+    (cube_vert_shader_code, transform_binding, EdgeStyles.implicit_match),
+    (cube_vert_shader_code, cube_descriptor_set_layout_create_info,
+     EdgeStyles.implicit_match),
+])
+
+# Camera and Transform Data
+camera_matrix = Matrix("Camera Matrix")
+transform_matrix = Matrix("Transform Matrix")
+uniform_buffer_usage = VkBufferUsageFlags("Uniform buffer")
+camera_buffer_create_info = VkBufferCreateInfo("Camera Buffer")
+transform_buffer_create_info = VkBufferCreateInfo("Transform Buffer")
+camera_buffer = VkBuffer("Camera Buffer")
+transform_buffer = VkBuffer("Transform Buffer")
+camera_uniform_buffer = VkBuffer("Cube Rendering Camera data")
+transform_uniform_buffer = VkBuffer("Cube Rendering Transform data")
+camera_copy_buffer = vkCmdCopyBuffer("camera matrix data")
+transform_copy_buffer = vkCmdCopyBuffer("transform matrix data")
+
+edge_list.extend([
+    (transfer_dst_buffer_usage, camera_buffer_create_info),
+    (uniform_buffer_usage, camera_buffer_create_info),
+    (transfer_dst_buffer_usage, transform_buffer_create_info),
+    (uniform_buffer_usage, transform_buffer_create_info),
+    (camera_buffer_create_info, camera_buffer),
+    (transform_buffer_create_info, transform_buffer),
+    (camera_matrix, camera_copy_buffer),
+    (transform_matrix, transform_copy_buffer),
+    (camera_copy_buffer, camera_uniform_buffer),
+    (transform_copy_buffer, transform_uniform_buffer),
+])
+
+
 # Allocate cube rendering descriptor sets and update the descriptor sets
 cube_descriptor_pool_create_info = VkDescriptorPoolCreateInfo(
     "Cube descriptor pool")
@@ -148,8 +206,6 @@ cube_descriptor_pool = VkDescriptorPool("Cube descriptor pool")
 cube_descriptor_set_allocate_info = VkDescriptorSetAllocateInfo(
     "Cube descriptor set")
 cube_descriptor_set = VkDescriptorSet("Cube descriptor set")
-camera_uniform_buffer = VkBuffer("Cube Rendering Camera data")
-transform_uniform_buffer = VkBuffer("Cube Rendering Transform data")
 camera_descriptor_buffer_info = VkDescriptorBufferInfo(
     "Cube descriptor buffer info: camera")
 transform_descriptor_buffer_info = VkDescriptorBufferInfo(
