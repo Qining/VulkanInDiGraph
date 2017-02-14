@@ -134,10 +134,12 @@ edge_list.extend([
     (cube_pipeline_vertex_input_state_create_info, cube_pipeline_create_info),
     (cube_pipeline_layout, cube_pipeline_create_info),
     (cube_pipeline_create_info, cube_pipeline),
+    (cube_vertex_data, cube_vertex_binding_desc),
+    (cube_vertex_data, cube_vertex_attribute_desc),
 
     # implicit matches
-    (cube_vertex_data, cube_vertex_binding_desc, EdgeStyles.implicit_match),
-    (cube_vertex_data, cube_vertex_attribute_desc, EdgeStyles.implicit_match),
+    (cube_vertex_buffer, cube_vertex_binding_desc, EdgeStyles.implicit_match),
+    (cube_vertex_buffer, cube_vertex_attribute_desc, EdgeStyles.implicit_match),
 ])
 
 # Shader module
@@ -178,8 +180,6 @@ transform_matrix = Matrix("Transform Matrix")
 uniform_buffer_usage = VkBufferUsageFlags("Uniform buffer")
 camera_buffer_create_info = VkBufferCreateInfo("Camera Buffer")
 transform_buffer_create_info = VkBufferCreateInfo("Transform Buffer")
-camera_buffer = VkBuffer("Camera Buffer")
-transform_buffer = VkBuffer("Transform Buffer")
 camera_uniform_buffer = VkBuffer("Cube Rendering Camera data")
 transform_uniform_buffer = VkBuffer("Cube Rendering Transform data")
 camera_copy_buffer = vkCmdCopyBuffer("camera matrix data")
@@ -190,8 +190,8 @@ edge_list.extend([
     (uniform_buffer_usage, camera_buffer_create_info),
     (transfer_dst_buffer_usage, transform_buffer_create_info),
     (uniform_buffer_usage, transform_buffer_create_info),
-    (camera_buffer_create_info, camera_buffer),
-    (transform_buffer_create_info, transform_buffer),
+    (camera_buffer_create_info, camera_uniform_buffer),
+    (transform_buffer_create_info, transform_uniform_buffer),
     (camera_matrix, camera_copy_buffer),
     (transform_matrix, transform_copy_buffer),
     (camera_copy_buffer, camera_uniform_buffer),
@@ -262,7 +262,7 @@ edge_list.extend([
 ])
 
 if __name__ == "__main__":
-    output_name = os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.png'
+    output_name = os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.pdf'
     if len(sys.argv) > 1:
         output_name = sys.argv[1]
     g = build_graph(edge_list)

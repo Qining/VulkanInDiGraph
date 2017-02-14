@@ -2,8 +2,8 @@ import pygraphviz as pgv
 
 
 class EdgeStyles:
-    implicit_dep = {"style": "dashed"}
-    implicit_match = {"style": "dashed", "arrowhead": "none"}
+    implicit_dep = {"style": "dashed", "weight": 0}
+    implicit_match = {"style": "dashed", "arrowhead": "none", "weight": 0}
 
 
 class NodeStyles:
@@ -61,7 +61,7 @@ class ElementNode(Node):
         return "navy"
 
     def shape(self):
-        return "underline"
+        return "cds"
 
 
 class CommandNode(Node):
@@ -183,4 +183,4 @@ def write_graph(graph, output):
     assert isinstance(graph, pgv.AGraph)
     assert isinstance(output, str)
     graph.layout('dot')
-    graph.draw(output)
+    graph.draw(output, format='pdf')
