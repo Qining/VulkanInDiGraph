@@ -139,6 +139,8 @@ _command_nodes = [
     "vkCmdBindPipeline",
     "vkCmdBindVertexBuffers",
     "vkCmdDrawIndexed",
+    "vkCmdUpdateBuffer",
+
     "vkUpdateDescriptor",
 ]
 

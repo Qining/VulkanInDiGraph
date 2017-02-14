@@ -12,18 +12,18 @@ vertex_buffer_usage = VkBufferUsageFlags("Vertex Buffer")
 transfer_buffer_usage = VkBufferUsageFlags("Transfer Dst")
 cube_vertex_buffer_create_info = VkBufferCreateInfo("Cube vertex buffer")
 cube_vertex_data = Vertex("Cube vertex data", NodeStyles.render_input)
-cube_vertex_buffer = VkBuffer(
-    "Cube vertex buffer: require data copied from elsewhere",
-    NodeStyles.render_input)
+cube_vertex_update_buffer = vkCmdUpdateBuffer("Transfer vertex data to buffer")
+cube_vertex_buffer = VkBuffer("Cube vertex buffer", NodeStyles.render_input)
 
 edge_list.extend([
     (vertex_buffer_usage, cube_vertex_buffer_create_info),
     (transfer_buffer_usage, cube_vertex_buffer_create_info),
     (cube_vertex_buffer_create_info, cube_vertex_buffer),
-    (cube_vertex_data, cube_vertex_buffer),
+    (cube_vertex_data, cube_vertex_update_buffer),
+    (cube_vertex_update_buffer, cube_vertex_buffer),
 
     # implicit matches
-    (cube_vertex_data, vertex_buffer_usage),
+    (cube_vertex_data, vertex_buffer_usage, EdgeStyles.implicit_dep),
 ])
 
 # cube rendering descriptor set layouts and pipeline layout
