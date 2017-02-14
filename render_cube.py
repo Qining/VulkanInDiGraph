@@ -196,6 +196,10 @@ edge_list.extend([
     (transform_matrix, transform_copy_buffer),
     (camera_copy_buffer, camera_uniform_buffer),
     (transform_copy_buffer, transform_uniform_buffer),
+
+    # implicit matches
+    (camera_matrix, cube_vert_shader_code),
+    (transform_matrix, cube_vert_shader_code),
 ])
 
 
